@@ -4,25 +4,46 @@
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 enum class opcode_t;
 enum class base_type_t;
 
-#define gen_instance_code(name) \
-  do {  \
-    static #name& get_instance() { \
-      static #name instance; \
-      return instance; \
-    } \
-    \
-    #name(const #name&) = delete; \
-    #name& operator= (const #name&) = delete; \
-    \
-  private: \
-    #name() = default; \
-    ~#name() = default; \
-  } while(0)
+// #define gen_instance_code(name)   \
+//   static name& get_##name##_instance() {   \
+//     static name instance;         \
+//     return instance;              \
+//   }                               \
+//                                   \
+//   name(const name&) = delete;     \
+//   name& operator= (const name&) = delete; \
+//                                   \
+// private:                          \
+//   name() = default;               \
+//   ~name() = default;              \
+
+template <typename _Ty>
+class singleton {
+public:
+  static _Ty& get_instance() {
+    static _Ty instance;
+    return instance;
+  }
+
+  singleton(const singleton&) = delete;
+  singleton& operator= (const singleton&) = delete;
+
+private:
+  singleton() = default;
+  ~singleton() = default;
+};
+
+template <typename _Ty>
+requires std::is_destructible_v<_Ty>
+_Ty& get_instance() {
+  return singleton<_Ty>::get_instance();
+}
 
 struct rename_t {
   int32_t counter;
@@ -59,6 +80,7 @@ struct var_t {
   int32_t consumed;
   bool is_ternary_ret;
   bool is_constl;
+
 };
 
 struct macro_t {
@@ -70,6 +92,7 @@ struct macro_t {
   std::vector<int32_t> params;
   int32_t params_num;
   bool disabled;
+
 };
 
 struct fn_t;
