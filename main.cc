@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "global.h"
+#include "parser.h"
 
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
@@ -43,5 +44,11 @@ auto main(int argc, char* argv[]) -> int {
 	start();
 
 	// if (libc) libc_generate();
+
+	parser parse(in);
+	parse.run();
+
+	global_release();
+
   return 0;
 }
