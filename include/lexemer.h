@@ -99,8 +99,14 @@ public:
   auto expect_internal(token_t token, int32_t aliasing) -> void;
   auto token_internal(int32_t aliasing) -> token_t;
   auto accept(token_t token) -> bool;
+  auto accept_internal(token_t token, int32_t aliasing) -> bool;
+  auto ident(token_t token, std::string& value) -> void;
+  auto ident_internal(token_t token, std::string& value, int32_t aliasing) -> void;
+  auto peek_token(token_t token, const std::string& value) -> bool;
 
 public:
+  auto is_digit(char c) -> bool;
+  auto is_hex(char c) -> bool;
   auto is_alnum(char c) -> bool;
   auto read_char(bool is_skip_space) -> int8_t;
   auto peek_char(int32_t offset) -> int8_t;
