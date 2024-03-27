@@ -1,5 +1,16 @@
 #include "lexemer.h"
 
+auto lexemer::is_digit(char c) -> bool {
+  return c >= '0' && c <= '9';
+}
+
+auto lexemer::is_hex(char c) -> bool {
+  return is_digit(c) ||
+         c == 'x'    ||
+         (c >= 'a' && c <= 'f') ||
+         (c >= 'A' && c <= 'F');
+}
+
 auto lexemer::is_alnum(char c) -> bool {
   return isalpha(c) || isdigit(c) || c == '_';
 }
@@ -53,23 +64,257 @@ auto lexemer::expect_internal(token_t token, int32_t aliasing) -> void {
     error("Unexpected token");
   }
   next_token = token_internal(aliasing);
+  spdlog::info("get the next token: {}", me::enum_name(next_token));
 }
 
 auto lexemer::token_internal(int32_t aliasing) -> token_t {
+  // ÅÐ¶ÏÔ¤´¦Àí¹Ø¼ü×Ö
   if (next_char == '#') {
-    int32_t i = 0;
-
     do {
       token_str.push_back(next_char);
     } while ( is_alnum(read_char(false)) );
+    skip_whitespace();
 
     spdlog::info("token str is {}", token_str);
+
+    if (token_str == "#include") return token_t::t_cppd_include;
+    if (token_str == "#define") return token_t::t_cppd_define;
+    if (token_str == "#undef") return token_t::t_cppd_undef;
+    if (token_str == "#error") return token_t::t_cppd_error;
+    if (token_str == "#if") return token_t::t_cppd_if;
+    if (token_str == "#elif") return token_t::t_cppd_elif;
+    if (token_str == "#ifdef") return token_t::t_cppd_ifdef;
+    if (token_str == "#else") return token_t::t_cppd_else;
+    if (token_str == "#endif") return token_t::t_cppd_endif;
+
+    error("Unknown directive");
   }
+  // ÅÐ¶ÏC·ç¸ñ×¢ÊÍ
+  if (next_char == '/') {
+    read_char(false);
+    if (next_char == '*') {
+      do {
+        read_char(false);
+        if (next_char == '*') {
+          read_char(false);
+          if (next_char == '/') {
+            read_char(true);
+            return token_internal(aliasing);
+          }
+        }
+      } while (next_char);
+    } else {
+      // Èç¹ûÊÇµ¥¸ö '/' ÄÇÃ´¾Í±íÊ¾ÊÇ³ý·¨
+      if (next_char == ' ')
+        read_char(false);
+      return token_t::t_divide;
+    }
+    error("Unexpected '/'");
+  }
+  // ÅÐ¶ÏÊý×Ö
+  if (is_digit(next_char)) {
+    token_str.clear();
+    do {
+      token_str.push_back(next_char);
+    } while (is_hex(read_char(false)));
+    skip_whitespace();
+    return token_t::t_numeric;
+  }
+  // ÅÐ¶Ï×óÀ¨ºÅ
+  if (next_char == '(') {
+    read_char(true);
+    return token_t::t_open_bracket;
+  }
+  // ÅÐ¶ÏÓÒÀ¨ºÅ
+  if (next_char == ')') {
+    read_char(true);
+    return token_t::t_close_bracket;
+  }
+  // ÅÐ¶Ï×ó»¨À¨ºÅ
+  if (next_char == '{') {
+    read_char(true);
+    return token_t::t_open_curly;
+  }
+  // ÅÐ¶ÏÓÒ»¨À¨ºÅ
+  if (next_char == '}') {
+    read_char(true);
+    return token_t::t_open_curly;
+  }
+  // ÅÐ¶Ï×óÖÐÀ¨ºÅ
+  if (next_char == '[') {
+    read_char(true);
+    return token_t::t_open_square;
+  }
+  // ÅÐ¶ÏÓÒÖÐÀ¨ºÅ
+  if (next_char == ']') {
+    read_char(true);
+    return token_t::t_close_square;
+  }
+  // ÅÐ¶ÏÒì»ò
+  if (next_char == '^') {
+    read_char(true);
+    return token_t::t_bit_xor;
+  }
+  // ÅÐ¶ÏÈ¡·´
+  if (next_char == '~') {
+    read_char(true);
+    return token_t::t_bit_not;
+  }
+  // ÅÐ¶Ï×Ö·û´®
+  if (next_char == '"') {
+    token_str.clear();
+    bool special = false;
+
+    while ((read_char(false) != '"') || special) {
+      // ÅÐ¶ÏÊÇ·ñÎª×ªÒå×Ö·û
+      if (token_str.back() == '\\') {
+        if (next_char == 'n') token_str.back() = '\n';
+        else if (next_char == '"') token_str.back() = '"';
+        else if (next_char == 'r') token_str.back() = '\r';
+        else if (next_char == '\'') token_str.back() = '\'';
+        else if (next_char == 't') token_str.back() = '\t';
+        else if (next_char == '\\') token_str.back() = '\\';
+        else abort();
+      } else {
+        token_str.push_back(next_char);
+      }
+      // Èç¹ûÓöµ½'\\'¾ÍÓ¦¸Ã¿¼ÂÇÊÇ·ñÎª×ªÒå
+      if (next_char == '\\') special = true;
+      else special = false;
+    }
+    read_char(true);
+    return token_t::t_string;
+  }
+  // ÅÐ¶Ï×Ö·û
+  if (next_char == '\'') {
+    read_char(false);
+    token_str.clear();
+
+    if (next_char == '\\') {
+      read_char(false);
+      if (next_char == 'n') token_str.back() = '\n';
+      else if (next_char == '"') token_str.back() = '"';
+      else if (next_char == 'r') token_str.back() = '\r';
+      else if (next_char == '\'') token_str.back() = '\'';
+      else if (next_char == 't') token_str.back() = '\t';
+      else if (next_char == '\\') token_str.back() = '\\';
+      else abort();
+    } else {
+      token_str.push_back(next_char);
+    }
+    if (read_char(false) != '\'') abort();
+    read_char(true);
+    return token_t::t_char;
+  }
+
   return token_t::t_eof;
 }
 
-auto lexemer::accept(token_t token) -> bool {}
+auto lexemer::accept(token_t token) -> bool {
+  spdlog::info("accept token: {}", me::enum_name(token));
+  return accept_internal(token, 1);
+}
 
-auto lexemer::read_global_statement() -> void {}
+auto lexemer::accept_internal(token_t token, int32_t aliasing) -> bool {
+  if (next_token == token) {
+    next_token = token_internal(aliasing);
+    spdlog::info("accept get next token: {}", me::enum_name(token));
+    return true;
+  }
+  return false;
+}
 
-auto lexemer::read_preproc_directive() -> bool {}
+auto lexemer::ident(token_t token, std::string &value) -> void {
+  ident_internal(token, value, 1);
+}
+
+auto lexemer::ident_internal(token_t token, std::string &value, int32_t aliasing) -> void {
+  if (next_token != token)
+    error("Unexpected token");
+  value = token_str;
+  next_token = token_internal(aliasing);
+
+  spdlog::info("ident token: {}\nvalue: {}\nnext token: {}",
+               me::enum_name(token), value, me::enum_name(next_token));
+}
+
+auto lexemer::peek_token(token_t token, const std::string &value) -> bool {
+  if (next_token == token) {
+    if (!value.empty()) return true;
+    token_str = value;
+    return true;
+  }
+  return false;
+}
+
+auto lexemer::read_global_statement() -> void {
+  std::string token;
+  block_t* block = &gs.block_source[0];
+
+  if (accept(token_t::t_struct)) {
+    ident(token_t::t_identifier, token);
+  } else if (accept(token_t::t_typedef)) {
+
+  } else if (peek_token(token_t::t_identifier, "")) {
+
+  } else {
+    error("Syntax error in global statement");
+  }
+}
+
+auto lexemer::read_preproc_directive() -> bool {
+  std::string token;
+
+  if (peek_token(token_t::t_cppd_include, token)) {
+    spdlog::info("entry token: {}", me::enum_name(token_t::t_cppd_include));
+
+    expect(token_t::t_cppd_include);
+
+    if (peek_token(token_t::t_string, "")) {
+      expect(token_t::t_string);
+    }
+    return true;
+  }
+
+  if (accept(token_t::t_cppd_define)) {
+    spdlog::info("entry token: {}", me::enum_name(token_t::t_cppd_define));
+    return true;
+  }
+
+  if (peek_token(token_t::t_cppd_undef, token)) {
+    spdlog::info("entry token: {}", me::enum_name(token_t::t_cppd_undef));
+    return true;
+  }
+
+  if (peek_token(token_t::t_cppd_error, token)) {
+    spdlog::info("entry token: {}", me::enum_name(token_t::t_cppd_error));
+    return true;
+  }
+
+  if (accept(token_t::t_cppd_if)) {
+    spdlog::info("entry token: {}", me::enum_name(token_t::t_cppd_if));
+    return true;
+  }
+
+  if (accept(token_t::t_cppd_elif)) {
+    spdlog::info("entry token: {}", me::enum_name(token_t::t_cppd_elif));
+    return true;
+  }
+
+  if (accept(token_t::t_cppd_else)) {
+    spdlog::info("entry token: {}", me::enum_name(token_t::t_cppd_else));
+    return true;
+  }
+
+  if (accept(token_t::t_cppd_endif)) {
+    spdlog::info("entry token: {}", me::enum_name(token_t::t_cppd_endif));
+    return true;
+  }
+
+  if (accept_internal(token_t::t_cppd_ifdef, 0)) {
+    spdlog::info("entry token: {}", me::enum_name(token_t::t_cppd_ifdef));
+    return true;
+  }
+
+  return false;
+}
