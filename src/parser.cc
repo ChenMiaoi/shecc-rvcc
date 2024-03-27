@@ -110,4 +110,10 @@ void parser::parse_internal() {
   gs.source_idx = 0;
   lx.next_char = gs.source[0];
   lx.expect(token_t::t_start);
+
+  do {
+    if (lx.read_preproc_directive())
+      continue;
+    lx.read_global_statement();
+  } while (!lx.accept(token_t::t_eof));
 }
