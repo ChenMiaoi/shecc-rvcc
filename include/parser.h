@@ -2,8 +2,10 @@
 #define __SHECC_RVCC_PARSER_H__
 
 #include "global.h"
+#include "lexemer.h"
 
 #include "spdlog/spdlog.h"
+
 #include <string>
 class parser {
 public:
@@ -19,6 +21,8 @@ private:
   void __load_source(const std::string& source_file);
 private:
   std::string _file;
+  global_t& gs = __singleton<global_t>::get_instance();
+  lexemer&  lx = __singleton<lexemer>::get_instance();
 };
 
 #endif //! __SHECC_RVCC_PARSER_H__

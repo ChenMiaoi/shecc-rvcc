@@ -36,4 +36,19 @@ constexpr const uint32_t MAX_CONSTANTS    = 1 << 10;
 
 constexpr const uint32_t ELF_START        = 0x10000;
 
+template <typename _Ty>
+class __singleton {
+public:
+  static _Ty& get_instance() {
+    static _Ty instance;
+    return instance;
+  }
+
+protected:
+  __singleton() = default;
+  __singleton(const __singleton&) = delete;
+  __singleton& operator= (const __singleton&) = delete;
+};
+
+
 #endif //! __SHECC_RVCC_DEFS_H__

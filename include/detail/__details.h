@@ -23,28 +23,6 @@ enum class base_type_t;
 //   name() = default;               \
 //   ~name() = default;              \
 
-template <typename _Ty>
-class singleton {
-public:
-  static _Ty& get_instance() {
-    static _Ty instance;
-    return instance;
-  }
-
-  singleton(const singleton&) = delete;
-  singleton& operator= (const singleton&) = delete;
-
-private:
-  singleton() = default;
-  ~singleton() = default;
-};
-
-template <typename _Ty>
-requires std::is_destructible_v<_Ty>
-_Ty& get_instance() {
-  return singleton<_Ty>::get_instance();
-}
-
 struct rename_t {
   int32_t counter;
   std::vector<int32_t> stack;
@@ -160,6 +138,8 @@ struct type_t {
   int32_t size;
   std::vector<var_t> fields;
   int32_t fields_num;
+
+  auto add_named_type(const std::string& name) -> type_t*;
 };
 
 struct lvalue_t {
@@ -183,7 +163,7 @@ struct constant_t {
 
 struct trie_t {
   int32_t index;
-  std::vector<int32_t> next;
+  int8_t  next[128] {};
 };
 
 struct phi_operand_t {

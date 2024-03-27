@@ -1,5 +1,8 @@
 # Prerequisites
 *.d
+build/
+.idea/
+*.rvc
 
 # Compiled Object files
 *.slo

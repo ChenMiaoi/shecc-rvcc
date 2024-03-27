@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.5.0)
 project(shecc-rvcc VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_C_COMPILE   "gcc-12")
@@ -19,6 +19,22 @@ set(CMAKE_CXX_COMPILE_FEATURES
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
+# target architecture
+option(RISCV_ARCH_BUILD "Build for RISC-V architecture" OFF)
+if (NOT RISCV_ARCH_BUILD)
+  set(ARM_ARCH_BUILD ON)
+endif ()
+
+if (ARM_ARCH_BUILD)
+  add_compile_definitions(ARCH_PREDEFINED="__arm__")
+  add_compile_definitions(ELF_MACHINE=0x28)
+  add_compile_definitions(ELF_FLAGS=0x5000200)
+endif ()
+
+if (RISCV_ARCH_BUILD)
+  add_compile_definitions()
+endif ()
+
 # speed log library
 set(DEPS_ROOT ${CMAKE_BINARY_DIR}/deps)
 if (NOT EXISTS ${DEPS_ROOT}/spdlog.zip) 
@@ -38,6 +54,26 @@ get_filename_component(SPDLOG_ROOT ${SPDLOG_ROOT_PATH} NAME)
 add_subdirectory(${DEPS_ROOT}/${SPDLOG_ROOT})
 
 include_directories(${DEPS_ROOT}/${SPDLOG_ROOT}/include)
+
+# magic enum library
+if (NOT EXISTS ${DEPS_ROOT}/magic_enum.tar.gz)
+  file(DOWNLOAD "https://github.com/Neargye/magic_enum/releases/download/v0.9.5/magic_enum-v0.9.5.tar.gz" ${DEPS_ROOT}/magic_enum.tar.gz)
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${DEPS_ROOT}/magic_enum
+  )
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E tar -xzf ${DEPS_ROOT}/magic_enum.tar.gz
+    WORKING_DIRECTORY ${DEPS_ROOT}/magic_enum
+  )
+else ()
+endif ()
+
+file(GLOB MAGIC_ENUM_ROOT_PATH ${DEPS_ROOT}/magic_enum*)
+list(FILTER MAGIC_ENUM_ROOT_PATH EXCLUDE REGEX ".tar.gz$")
+get_filename_component(MAGIC_ENUM_ROOT ${MAGIC_ENUM_ROOT_PATH} NAME)
+add_subdirectory(${DEPS_ROOT}/${MAGIC_ENUM_ROOT})
+
+include_directories(${DEPS_ROOT}/${MAGIC_ENUM_ROOT}/include)
 
 # future we need to add "valgrind" to check memory leek
 # find_program(CTEST_MEMORYCHECK_COMMAND NAMES valgrind)
