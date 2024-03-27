@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(shecc-rvcc VERSION 0.1.0 LANGUAGES C CXX)
 
-set(CMAKE_C_COMPILE   "gcc-12")
-set(CMAKE_CXX_COMPILE "g++-12")
+set(CMAKE_C_COMPILE   "gcc-11")
+set(CMAKE_CXX_COMPILE "g++-11")
 
-set(CMAKE_CXX_COMPILE_FEATURES 
+set(CMAKE_CXX_COMPILE_FEATURES
   "-pedantic                        \
   -Wall -Wextra                     \
   -Wno-unused-but-set-variable      \
@@ -37,7 +37,7 @@ endif ()
 
 # speed log library
 set(DEPS_ROOT ${CMAKE_BINARY_DIR}/deps)
-if (NOT EXISTS ${DEPS_ROOT}/spdlog.zip) 
+if (NOT EXISTS ${DEPS_ROOT}/spdlog.zip)
   message(WARNING "spdlog library not exists, start to download")
   file(DOWNLOAD "https://github.com/gabime/spdlog/archive/refs/tags/v1.13.0.zip" ${DEPS_ROOT}/spdlog.zip)
   execute_process(
@@ -45,7 +45,7 @@ if (NOT EXISTS ${DEPS_ROOT}/spdlog.zip)
     WORKING_DIRECTORY ${DEPS_ROOT}
   )
 else()
-message(STATUS "find spdlog library exists")
+  message(STATUS "find spdlog library exists")
 endif()
 
 file(GLOB SPDLOG_ROOT_PATH ${DEPS_ROOT}/spdlog*)
