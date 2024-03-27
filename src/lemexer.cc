@@ -67,3 +67,9 @@ auto lexemer::token_internal(int32_t aliasing) -> token_t {
   }
   return token_t::t_eof;
 }
+
+auto lexemer::accept(token_t token) -> bool {}
+
+auto lexemer::read_global_statement() -> void {}
+
+auto lexemer::read_preproc_directive() -> bool {}

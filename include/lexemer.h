@@ -98,6 +98,7 @@ public:
   auto expect(token_t token) -> void;
   auto expect_internal(token_t token, int32_t aliasing) -> void;
   auto token_internal(int32_t aliasing) -> token_t;
+  auto accept(token_t token) -> bool;
 
 public:
   auto is_alnum(char c) -> bool;
@@ -108,6 +109,10 @@ public:
   auto is_linebreak(char c) -> bool;
   auto is_whitespace(char c) -> bool;
   auto skip_whitespace() -> void ;
+
+  auto read_preproc_directive() -> bool;
+  auto read_global_statement() -> void;
+
 private:
   lexemer() = default;
 };
