@@ -1,5 +1,81 @@
 #include "lexemer.h"
 
+auto lexemer::__load_source(const std::string& source_file) -> void {
+  std::string source_line;
+
+  fs::path file_path = fs::canonical(source_file);
+
+  if (!fs::exists(file_path)) {
+    spdlog::error("\"{}\" file not exists!", source_file);
+    abort();
+  }
+
+  std::ifstream file(source_file);
+
+  if (!file.is_open()) {
+    spdlog::error("\"{}\" file cannot open!", source_file);
+    abort();
+  }
+  spdlog::info("open \"{}\" file.", source_file);
+
+  while (std::getline(file, source_line)) {
+    if (!source_line.compare(0, 9, "#include ") && source_line[9] == '"') {
+      spdlog::info("matched include.");
+
+      std::string path = file_path.parent_path();
+      spdlog::info("get the file directory: {}", path);
+
+      path += '/';
+      path += source_line.substr(
+        source_line.find('"') + 1,
+        source_line.rfind('"') - source_line.find('"') - 1
+      );
+      spdlog::info("get the source file include header path: {}", path);
+
+      __load_source(path);
+    } else {
+      _source += source_line;
+      _source += '\n';
+    }
+  }
+
+  spdlog::info("source is: \n{}\nsource idx is {}", _source, _source.size());
+  file.close();
+}
+
+lexemer::lexemer(const std::string &path)
+  : _current {0}
+  , _start {0}
+  , _line {1}
+  , _source {} {
+  __load_source(path);
+}
+
+auto lexemer::scan_tokens() -> void {
+  expect(token_t::t_start);
+}
+
+auto lexemer::expect(token_t token, int32_t aliasing) -> void {
+  if (_next_token != token)
+    error("Unexpected token");
+  spdlog::info("expect token type: {}", me::enum_name(token));
+
+  _next_token = get_next_token(aliasing);
+  spdlog::info("get next token: {}", me::enum_name(_next_token));
+}
+
+auto lexemer::get_next_token(int32_t aliasing) -> token_t {
+  std::string token_str;
+
+  if (_source[_current] == '#') {
+    do {
+      token_str.push_back(_source[_current]);
+    } while (is_alnum(read_char(true)));
+    skip_whitespace();
+  }
+}
+
+#if 0
 auto lexemer::is_digit(char c) -> bool {
   return c >= '0' && c <= '9';
 }
@@ -318,3 +394,4 @@ auto lexemer::read_preproc_directive() -> bool {
 
   return false;
 }
+#endif

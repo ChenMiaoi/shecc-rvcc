@@ -10,6 +10,7 @@
 
 namespace fs = std::filesystem;
 
+#if 0
 parser::parser(const std::string& file)
   : _file {file} {
   spdlog::info("parser get file: {}", _file);
@@ -117,3 +118,4 @@ void parser::parse_internal() {
     lx.read_global_statement();
   } while (!lx.accept(token_t::t_eof));
 }
+#endif

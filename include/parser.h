@@ -7,6 +7,8 @@
 #include "spdlog/spdlog.h"
 
 #include <string>
+
+#if 0
 class parser {
 public:
   parser(const std::string& file);
@@ -24,5 +26,6 @@ private:
   global_t& gs = __singleton<global_t>::get_instance();
   lexemer&  lx = __singleton<lexemer>::get_instance();
 };
+#endif
 
 #endif //! __SHECC_RVCC_PARSER_H__

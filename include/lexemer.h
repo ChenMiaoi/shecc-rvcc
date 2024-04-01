@@ -3,89 +3,46 @@
 
 #include "defs.h"
 #include "global.h"
+#include "token.h"
 
 #include "spdlog/spdlog.h"
 #include "magic_enum/magic_enum.hpp"
 
-namespace me = magic_enum;
-
+#include <filesystem>
+#include <fstream>
 #include <cstdint>
 #include <string>
 
-enum class token_t {
-  t_start, /* FIXME: it was intended to start the state machine. */
-  t_numeric,
-  t_identifier,
-  t_comma,  /* , */
-  t_string, /* null-terminated string */
-  t_char,
-  t_open_bracket,  /* ( */
-  t_close_bracket, /* ) */
-  t_open_curly,    /* { */
-  t_close_curly,   /* } */
-  t_open_square,   /* [ */
-  t_close_square,  /* ] */
-  t_asterisk,      /* '*' */
-  t_divide,        /* / */
-  t_mod,           /* % */
-  t_bit_or,        /* | */
-  t_bit_xor,       /* ^ */
-  t_bit_not,       /* ~ */
-  t_log_and,       /* && */
-  t_log_or,        /* || */
-  t_log_not,       /* ! */
-  t_lt,            /* < */
-  t_gt,            /* > */
-  t_le,            /* <= */
-  t_ge,            /* >= */
-  t_lshift,        /* << */
-  t_rshift,        /* >> */
-  t_dot,           /* . */
-  t_arrow,         /* -> */
-  t_plus,          /* + */
-  t_minus,         /* - */
-  t_minuseq,       /* -= */
-  t_pluseq,        /* += */
-  t_oreq,          /* |= */
-  t_andeq,         /* &= */
-  t_eq,            /* == */
-  t_noteq,         /* != */
-  t_assign,        /* = */
-  t_increment,     /* ++ */
-  t_decrement,     /* -- */
-  t_question,      /* ? */
-  t_colon,         /* : */
-  t_semicolon,     /* ; */
-  t_eof,           /* end-of-file (EOF) */
-  t_ampersand,     /* & */
-  t_return,
-  t_if,
-  t_else,
-  t_while,
-  t_for,
-  t_do,
-  t_typedef,
-  t_enum,
-  t_struct,
-  t_sizeof,
-  t_elipsis, /* ... */
-  t_switch,
-  t_case,
-  t_break,
-  t_default,
-  t_continue,
-  /* C pre-processor directives */
-  t_cppd_include,
-  t_cppd_define,
-  t_cppd_undef,
-  t_cppd_error,
-  t_cppd_if,
-  t_cppd_elif,
-  t_cppd_else,
-  t_cppd_endif,
-  t_cppd_ifdef
+namespace fs = std::filesystem;
+namespace me = magic_enum;
+
+class lexemer {
+private:
+  int32_t _current;
+  int32_t _start;
+  int32_t _line;
+  std::string _source;
+  std::string _literal;
+  token_t     _next_token;
+  std::vector<token> _tokens;
+//  std::unordered_map<std::string, token_t> _key_words;
+
+public:
+  lexemer(const std::string& path);
+
+  auto scan_tokens() -> void;
+  auto expect(token_t token, int32_t aliasing = 1) -> void;
+  auto get_next_token(int32_t aliasing) -> token_t;
+
+  auto read_char(bool is_skip_space) -> char;
+  auto is_alnum(char c) -> bool;
+  auto skip_whitespace() -> void;
+private:
+  auto __load_source(const std::string& source_file) -> void;
+
 };
 
+#if 0
 struct lexemer: __singleton<lexemer> {
   friend __singleton<lexemer>;
 
@@ -122,5 +79,7 @@ public:
 private:
   lexemer() = default;
 };
+
+#endif
 
 #endif //! __SHECC_RVCC_LEXEMER_H__
