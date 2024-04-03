@@ -21,25 +21,38 @@ private:
   int32_t _current;
   int32_t _start;
   int32_t _line;
+  bool    _skip_newline;
   std::string _source;
-  std::string _literal;
-  token_t     _next_token;
+  token       _next_token;
   std::vector<token> _tokens;
 //  std::unordered_map<std::string, token_t> _key_words;
 
 public:
   lexemer(const std::string& path);
 
-  auto scan_tokens() -> void;
+  auto scan_tokens() -> std::vector<token>;
   auto expect(token_t token, int32_t aliasing = 1) -> void;
-  auto get_next_token(int32_t aliasing) -> token_t;
+  auto accept(token_t token, int32_t aliasing = 1) -> bool;
+  auto peek(token_t token) -> bool;
+  auto get_next_token(int32_t aliasing = 1) -> token;
+  auto read_preproc_directive() -> bool;
+  auto read_global_statement() -> void;
 
-  auto read_char(bool is_skip_space) -> char;
+  auto read_char(bool is_skip_space = false) -> char;
+  auto peek_char(int32_t offset = 0) -> char;
   auto is_alnum(char c) -> bool;
+  auto is_digit(char c) -> bool;
+  auto is_hex(char c) -> bool;
+  auto is_numeric(const std::string& buf) -> bool;
+  auto is_linebreak() -> bool;
+  auto is_whitespace() -> bool;
+  auto is_newline() -> bool;
   auto skip_whitespace() -> void;
+
+
 private:
   auto __load_source(const std::string& source_file) -> void;
-
+  auto error(const std::string& msg) -> void;
 };
 
 #if 0

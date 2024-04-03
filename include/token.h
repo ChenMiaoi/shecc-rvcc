@@ -44,11 +44,30 @@ enum class token_t {
   t_cppd_ifdef,   t_cppd_undef
 };
 
+#include "magic_enum/magic_enum.hpp"
+namespace me = magic_enum;
+
 struct token {
   token_t     token_type;
   std::string lexeme;
-  void*       literal;
+  std::string literal;
   int32_t     line;
+
+  token() = default;
+
+  token(token_t type, const std::string lexem, const std::string liter, int32_t lines)
+    : token_type {type}
+    , lexeme {lexem}
+    , literal {liter}
+    , line {lines} {}
+};
+
+template <>
+struct fmt::formatter<token>: fmt::formatter<std::string> {
+  auto format(token t, format_context& ctx) const -> decltype(ctx.out()) {
+    return format_to(ctx.out(), "[\n\ttoken type: {}\n\tlexeme: {}\n\tliteral: {}\n] at {} lines",
+                     me::enum_name(t.token_type), t.lexeme, t.literal.empty() ? "null" : t.literal, t.line);
+  }
 };
 
 #endif // SHECC_RVCC_TOKEN_H
